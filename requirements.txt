@@ -1,0 +1,2 @@
+celery~=5.4.0
+fastapi[standard]~=0.115.0

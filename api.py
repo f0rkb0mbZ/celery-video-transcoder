@@ -8,6 +8,7 @@ import shutil
 import ffmpeg
 import random
 
+
 from helpers.video import resize_video
 
 UPLOAD_DIR = "uploads"
@@ -41,12 +42,25 @@ async def upload_handler(request: Request, file: UploadFile = File(...)):
             mediainfo = ffmpeg.probe(file_path)
             # Get length of the media
             media_length = mediainfo.get("format").get("duration")
-            thumbnail_path = os.path.join(STATIC_DIR, f"{file.filename}_thumbnail.jpg")
+            thumbnail_path = os.path.join(STATIC_DIR, f"{os.path.splitext(file.filename)[0]}_thumbnail.jpg")
             # Extract thumbnail from a random timestamp
             ffmpeg.input(file_path, ss=random.randint(0, int(float(media_length)))).filter('scale', 1280, -1).output(
                 thumbnail_path, vframes=1).overwrite_output().run()
-            resize_video.delay(input_file=file_path, output_file=os.path.join(STATIC_DIR, f"{file.filename}_720p.mp4"),
-                               width=720, cuda=True)
+            # Available video widths
+            video_heights = [2160, 1440, 1080, 720, 480, 360, 240, 144]
+            # Get video stream metadata from the 1st stream
+            video_metadata = None
+            for stream in mediainfo.get("streams"):
+                if stream.get("codec_type") == "video":
+                    video_metadata = stream
+            video_height = video_metadata.get("height")
+            print(f'Video height is: {video_height}')
+            for height in video_heights:
+                if video_height > height:
+                    print(f'Queueing video to downsize to {height}p!')
+                    resize_video.delay(input_file=file_path,
+                                       output_file=os.path.join(STATIC_DIR, f"{os.path.splitext(file.filename)[0]}_{height}p.mp4"),
+                                       height=height, cuda=False)
             return templates.TemplateResponse("index.html", {"request": request, "image_url": f"/{thumbnail_path}"})
         else:
             return templates.TemplateResponse("index.html", {"request": request, "image_url": None,

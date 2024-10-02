@@ -1,3 +1,5 @@
+import time
+
 from fastapi import FastAPI, File, UploadFile
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,9 +9,9 @@ import os
 import shutil
 import ffmpeg
 import random
+from celery.result import AsyncResult
 
-
-from helpers.video import resize_video
+from helpers.video import resize_video, resize_video_with_progress
 
 UPLOAD_DIR = "uploads"
 STATIC_DIR = "static"
@@ -22,7 +24,7 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "image_url": None})
+    return templates.TemplateResponse("index.html", {"request": request, "image_url": None, "tasks": None})
 
 
 @app.post("/uploadfile/")
@@ -46,7 +48,7 @@ async def upload_handler(request: Request, file: UploadFile = File(...)):
             # Extract thumbnail from a random timestamp
             ffmpeg.input(file_path, ss=random.randint(0, int(float(media_length)))).filter('scale', 1280, -1).output(
                 thumbnail_path, vframes=1).overwrite_output().run()
-            # Available video widths
+            # Available video heights
             video_heights = [2160, 1440, 1080, 720, 480, 360, 240, 144]
             # Get video stream metadata from the 1st stream
             video_metadata = None
@@ -55,16 +57,47 @@ async def upload_handler(request: Request, file: UploadFile = File(...)):
                     video_metadata = stream
             video_height = video_metadata.get("height")
             print(f'Video height is: {video_height}')
+            tasks = dict()
             for height in video_heights:
                 if video_height > height:
                     print(f'Queueing video to downsize to {height}p!')
-                    resize_video.delay(input_file=file_path,
-                                       output_file=os.path.join(STATIC_DIR, f"{os.path.splitext(file.filename)[0]}_{height}p.mp4"),
-                                       height=height, cuda=False)
-            return templates.TemplateResponse("index.html", {"request": request, "image_url": f"/{thumbnail_path}"})
+                    # resize_video.delay(input_file=file_path,
+                    #                    output_file=os.path.join(STATIC_DIR, f"{os.path.splitext(file.filename)[0]}_{height}p.mp4"),
+                    #                    height=height, cuda=True)
+                    output_file = f"{os.path.splitext(file.filename)[0]}_{height}p.mp4"
+                    tasks[f'{height}p'] = {'file': output_file, 'task': resize_video_with_progress.delay(input_file=file_path,
+                                                                           output_file=os.path.join(STATIC_DIR,
+                                                                                                    output_file),
+                                                                           height=height,
+                                                                           media_length=int(float(media_length)),
+                                                                           cuda=True)}
+
+            for video_height, detail in tasks.items():
+                print(detail['task'].state)
+                if detail['task'].state == 'PROGRESS':
+                    print(detail['task'].info)
+                # print(dir(task))
+                # print(task.info.get('progress'))
+            return templates.TemplateResponse("index.html",
+                                              {"request": request, "image_url": f"/{thumbnail_path}", "tasks": tasks})
         else:
             return templates.TemplateResponse("index.html", {"request": request, "image_url": None,
                                                              "error": "Only video files are supported!"})
+
+
+@app.get("/task_status/{task_id}")
+async def get_transcoding_status(request: Request, task_id: str):
+    task = AsyncResult(task_id)
+    if task.state == 'PENDING':
+        return {'state': task.state, 'progress': 0}
+    elif task.state == 'FAILURE':
+        return {'state': task.state, 'progress': -1}
+    elif task.state == 'SUCCESS':
+        return {'state': task.state, 'progress': 100}
+    elif task.state == 'PROGRESS':
+        return {'state': task.state, 'progress': task.info.get('progress', 0)}
+    else:
+        return {'state': task.state, 'progress': 0}
 
 
 d = {'streams': [{'index': 0,

@@ -48,12 +48,13 @@
     <div class="row justify-content-center align-items-center vh-100">
         <div class="col-6 text-center">
             <div class="d-flex align-items-center justify-content-center mb-4">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Celery_logo.png" class="img-fluid w-50 me-3" alt="Celery Logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Celery_logo.png"
+                     class="img-fluid w-50 me-3" alt="Celery Logo">
                 <h1 class="display-5 mb-0">Celery Video Transcoder</h1>
             </div>
             {% if not image_url %}
             <h1 class="mb-4">Upload a video file</h1>
-            <form action="/uploadfile/" enctype="multipart/form-data" method="post">
+            <form action="/upload_file/" enctype="multipart/form-data" method="post">
                 <input name="file" type="file">
                 <input type="submit" value="Upload">
             </form>

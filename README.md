@@ -1,9 +1,9 @@
 # celery-video-transcoder
 
-FastAPI and Celery pipeline for bulk video transcode - to simulate YouTube uploads
+FastAPI and Celery pipeline for bulk video transcode - to simulate YouTube uploads.
 
 This repository is a part of my blog
-on [Distributed computing with Python: A comprehensive guide to Celery](/distributed-computing-with-python-a-comprehensive-guide-to-celery).
+on [Distributed Computing with Python: Unleashing the Power of Celery for Scalable Applications](https://blogs.snehangshu.dev/mastering-distributed-computing-with-python-unleashing-the-power-of-celery-for-scalable-applications).
 Follow it for detailed instructions.
 
 ### Install Redis and RabbitMQ in your system or run the given `docker-compose.yml`
@@ -11,6 +11,11 @@ Follow it for detailed instructions.
 docker compose up
 ```
 Once the containers are stated, Redis will be available at `redis://localhost:6379` and RabbitMQ will be available at `rabbitmq://localhost:5672`
+### Install ffmpeg in your system
+```bash
+sudo apt install ffmpeg # Assuming ubuntu / debian system
+```
+For other os, please follow the official [guide](https://www.ffmpeg.org/download.html).
 ### Create python a virtual environment
 
 ```bash

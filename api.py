@@ -1,3 +1,14 @@
+"""
+Celery Video Transcoder webapp
+
+Author: Snehangshu Bhattacharya
+Maintainer: Snehangshu Bhattacharya
+"""
+
+__author__ = "Snehangshu Bhattacharya"
+__maintainer__ = "Snehangshu Bhattacharya"
+__email__ = "hello@snehangshu.dev"
+
 import os
 import random
 

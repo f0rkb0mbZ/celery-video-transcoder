@@ -1,0 +1,9 @@
+services:
+  rabbitmq:
+    image: rabbitmq:latest
+    ports:
+      - "5672:5672"
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"

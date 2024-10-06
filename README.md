@@ -6,6 +6,11 @@ This repository is a part of my blog
 on [Distributed computing with Python: A comprehensive guide to Celery](/distributed-computing-with-python-a-comprehensive-guide-to-celery).
 Follow it for detailed instructions.
 
+### Install Redis and RabbitMQ in your system or run the given `docker-compose.yml`
+```bash
+docker compose up
+```
+Once the containers are stated, Redis will be available at `redis://localhost:6379` and RabbitMQ will be available at `rabbitmq://localhost:5672`
 ### Create python a virtual environment
 
 ```bash

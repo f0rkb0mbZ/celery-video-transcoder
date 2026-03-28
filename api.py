@@ -94,6 +94,9 @@ async def upload_handler(request: Request, file: UploadFile = File(...)):
                                                                                         float(media_length)),
                                                                                     cuda=False)}
 
+            # Optimization: Remove the source file to save disk space now that tasks are queued
+            os.remove(file_path)
+
             return templates.TemplateResponse("index.html",
                                               {"request": request, "image_url": f"/{thumbnail_path}", "tasks": tasks})
         else:

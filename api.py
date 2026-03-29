@@ -61,8 +61,8 @@ async def upload_handler(request: Request, file: UploadFile = File(...)):
             media_length = mediainfo.get("format").get("duration")
             thumbnail_path = os.path.join(STATIC_DIR, f"{os.path.splitext(file.filename)[0]}_thumbnail.jpg")
 
-            # Extract thumbnail from a random timestamp
-            ffmpeg.input(file_path, ss=random.randint(0, int(float(media_length)))).filter('scale', 1280, -1).output(
+            # Extract thumbnail from a random timestamp (at least 1 second in to avoid black frames)
+            ffmpeg.input(file_path, ss=random.randint(1, int(float(media_length)))).filter('scale', 1280, -1).output(
                 thumbnail_path, vframes=1).overwrite_output().run()
 
             # Available video heights
@@ -93,6 +93,9 @@ async def upload_handler(request: Request, file: UploadFile = File(...)):
                                                                                     media_length=int(
                                                                                         float(media_length)),
                                                                                     cuda=False)}
+
+            # Optimization: Remove the source file to save disk space now that tasks are queued
+            os.remove(file_path)
 
             return templates.TemplateResponse("index.html",
                                               {"request": request, "image_url": f"/{thumbnail_path}", "tasks": tasks})
